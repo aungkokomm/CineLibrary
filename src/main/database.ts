@@ -152,5 +152,21 @@ export function initDatabase(dbPath: string): DB {
     WHERE movie_root_relative IS NOT NULL AND movie_root_relative != '';
   `)
 
+  // ── Migrations (safe to run every startup) ──────────────────────────
+
+  // v1.1 — watched tracking
+  const cols = (db.prepare(`PRAGMA table_info(movies)`).all() as any[]).map(c => c.name)
+  if (!cols.includes('is_watched')) {
+    db.exec(`ALTER TABLE movies ADD COLUMN is_watched INTEGER DEFAULT 0`)
+  }
+
+  // v1.1 — user preferences (key/value store)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS preferences (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `)
+
   return db
 }

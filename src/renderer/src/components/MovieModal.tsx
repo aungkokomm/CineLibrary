@@ -46,6 +46,13 @@ export default function MovieModal() {
     setMovie(updated)
     loadMovies()
   }
+  async function toggleWatched() {
+    if (!movie) return
+    await window.api.movies.toggleWatched(movie.id)
+    const updated = await window.api.movies.detail(movie.id)
+    setMovie(updated)
+    loadMovies()
+  }
 
   function filterByActor(name: string) {
     setOpenMovieId(null)
@@ -136,6 +143,13 @@ export default function MovieModal() {
                     </button>
                     <button className="btn btn-outline" onClick={toggleFavorite}>
                       {movie.is_favorite ? '★ Favorited' : '☆ Favorite'}
+                    </button>
+                    <button
+                      className={`btn ${movie.is_watched ? 'btn-ghost' : 'btn-outline'}`}
+                      onClick={toggleWatched}
+                      title={movie.is_watched ? 'Mark as unwatched' : 'Mark as watched'}
+                    >
+                      {movie.is_watched ? '✓ Watched' : '○ Unwatched'}
                     </button>
                   </div>
                 </div>

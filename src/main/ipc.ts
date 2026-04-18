@@ -184,16 +184,19 @@ export function registerIpcHandlers(db: Database, dataDir: string) {
     actor?: string
     year?: number
     driveSerial?: string
+    collectionId?: number
     showMissing?: boolean
     favoritesOnly?: boolean
+    watchedFilter?: 'all' | 'watched' | 'unwatched'
     limit?: number
     offset?: number
   } = {}) => {
     const {
       search, sort = 'sort_title', sortDir = 'asc',
-      genre, director, actor, year, driveSerial,
+      genre, director, actor, year, driveSerial, collectionId,
       showMissing = true, favoritesOnly = false,
-      limit = 1000, offset = 0
+      watchedFilter = 'all',
+      limit = 60, offset = 0
     } = opts
 
     const where: string[] = []
@@ -201,6 +204,8 @@ export function registerIpcHandlers(db: Database, dataDir: string) {
 
     if (!showMissing) where.push('m.is_missing = 0')
     if (favoritesOnly) where.push('m.is_favorite = 1')
+    if (watchedFilter === 'watched')   where.push('m.is_watched = 1')
+    if (watchedFilter === 'unwatched') where.push('m.is_watched = 0')
     if (year) { where.push('m.year = ?'); params.push(year) }
     if (driveSerial) { where.push('m.volume_serial = ?'); params.push(driveSerial) }
 
@@ -215,6 +220,10 @@ export function registerIpcHandlers(db: Database, dataDir: string) {
     if (actor) {
       where.push('m.id IN (SELECT ma.movie_id FROM movie_actors ma JOIN actors a ON a.id = ma.actor_id WHERE a.name = ?)')
       params.push(actor)
+    }
+    if (collectionId) {
+      where.push('m.id IN (SELECT ms.movie_id FROM movie_sets ms WHERE ms.set_id = ?)')
+      params.push(collectionId)
     }
     if (search && search.trim()) {
       // Use FTS + actor/director LIKE for broader coverage
@@ -239,7 +248,7 @@ export function registerIpcHandlers(db: Database, dataDir: string) {
     const query = `
       SELECT
         m.id, m.title, m.year, m.rating, m.runtime, m.tagline,
-        m.local_poster, m.is_missing, m.is_favorite,
+        m.local_poster, m.is_missing, m.is_favorite, m.is_watched,
         m.volume_serial,
         d.label as drive_label,
         (SELECT GROUP_CONCAT(g.name, ', ') FROM movie_genres mg JOIN genres g ON g.id = mg.genre_id WHERE mg.movie_id = m.id) as genres_csv
@@ -315,6 +324,136 @@ export function registerIpcHandlers(db: Database, dataDir: string) {
       result = db.prepare('DELETE FROM movies WHERE is_missing = 1').run()
     }
     return { deleted: result.changes }
+  })
+
+  ipcMain.handle('movies:toggleWatched', (_e, id: number) => {
+    db.prepare('UPDATE movies SET is_watched = 1 - is_watched WHERE id = ?').run(id)
+    return db.prepare('SELECT is_watched FROM movies WHERE id = ?').get(id)
+  })
+
+  // ─── COLLECTIONS ───────────────────────────────────────────────────
+
+  ipcMain.handle('collections:list', () => {
+    return db.prepare(`
+      SELECT s.id, s.name, COUNT(ms.movie_id) as movie_count
+      FROM sets s
+      JOIN movie_sets ms ON ms.set_id = s.id
+      GROUP BY s.id
+      ORDER BY s.name
+    `).all()
+  })
+
+  // ─── PREFERENCES ──────────────────────────────────────────────────
+
+  ipcMain.handle('prefs:get', () => {
+    const rows = db.prepare('SELECT key, value FROM preferences').all() as any[]
+    return Object.fromEntries(rows.map(r => [r.key, JSON.parse(r.value)]))
+  })
+
+  ipcMain.handle('prefs:set', (_e, key: string, value: any) => {
+    db.prepare('INSERT OR REPLACE INTO preferences (key, value) VALUES (?, ?)')
+      .run(key, JSON.stringify(value))
+    return { success: true }
+  })
+
+  // ─── EXPORT ───────────────────────────────────────────────────────
+
+  ipcMain.handle('export:csv', async (event, opts: any = {}) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showSaveDialog(win!, {
+      title: 'Export to CSV',
+      defaultPath: 'CineLibrary-Export.csv',
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    if (result.canceled || !result.filePath) return { canceled: true }
+
+    const movies = db.prepare(`
+      SELECT m.title, m.original_title, m.year, m.rating, m.runtime, m.mpaa,
+             m.studio, m.country, m.premiered, m.imdb_id, m.tmdb_id,
+             m.is_watched, m.is_favorite, m.play_count,
+             d.label as drive,
+             (SELECT GROUP_CONCAT(g.name, '; ') FROM movie_genres mg JOIN genres g ON g.id=mg.genre_id WHERE mg.movie_id=m.id) as genres,
+             (SELECT GROUP_CONCAT(dir.name, '; ') FROM movie_directors md JOIN directors dir ON dir.id=md.director_id WHERE md.movie_id=m.id) as directors
+      FROM movies m
+      LEFT JOIN drives d ON d.volume_serial = m.volume_serial
+      ORDER BY m.sort_title
+    `).all() as any[]
+
+    const headers = ['Title','Original Title','Year','Rating','Runtime (min)','MPAA','Studio','Country','Released','IMDb ID','TMDb ID','Watched','Favorite','Play Count','Drive','Genres','Directors']
+    const csvEscape = (v: any) => v == null ? '' : `"${String(v).replace(/"/g, '""')}"`
+    const lines = [
+      headers.join(','),
+      ...movies.map(m => [
+        m.title, m.original_title, m.year, m.rating, m.runtime, m.mpaa,
+        m.studio, m.country, m.premiered, m.imdb_id, m.tmdb_id,
+        m.is_watched ? 'Yes' : 'No', m.is_favorite ? 'Yes' : 'No', m.play_count,
+        m.drive, m.genres, m.directors
+      ].map(csvEscape).join(','))
+    ]
+    fs.writeFileSync(result.filePath, lines.join('\r\n'), 'utf8')
+    return { success: true, path: result.filePath, count: movies.length }
+  })
+
+  ipcMain.handle('export:html', async (event, opts: any = {}) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showSaveDialog(win!, {
+      title: 'Export to HTML',
+      defaultPath: 'CineLibrary-Export.html',
+      filters: [{ name: 'HTML', extensions: ['html'] }]
+    })
+    if (result.canceled || !result.filePath) return { canceled: true }
+
+    const movies = db.prepare(`
+      SELECT m.title, m.original_title, m.year, m.rating, m.runtime,
+             m.plot, m.imdb_id, m.is_watched, m.is_favorite,
+             d.label as drive,
+             (SELECT GROUP_CONCAT(g.name, ', ') FROM movie_genres mg JOIN genres g ON g.id=mg.genre_id WHERE mg.movie_id=m.id) as genres,
+             (SELECT GROUP_CONCAT(dir.name, ', ') FROM movie_directors md JOIN directors dir ON dir.id=md.director_id WHERE md.movie_id=m.id) as directors
+      FROM movies m
+      LEFT JOIN drives d ON d.volume_serial = m.volume_serial
+      ORDER BY m.sort_title
+    `).all() as any[]
+
+    const esc = (s: any) => s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    const rows = movies.map(m => `
+      <tr class="${m.is_watched ? 'watched' : ''}">
+        <td>${esc(m.title)}${m.original_title && m.original_title !== m.title ? `<br><small>${esc(m.original_title)}</small>` : ''}</td>
+        <td>${esc(m.year)}</td>
+        <td>${m.rating ? `★ ${Number(m.rating).toFixed(1)}` : ''}</td>
+        <td>${esc(m.runtime) ? m.runtime + ' min' : ''}</td>
+        <td>${esc(m.genres)}</td>
+        <td>${esc(m.directors)}</td>
+        <td>${esc(m.drive)}</td>
+        <td>${m.is_watched ? '✓' : ''}</td>
+        <td>${m.imdb_id ? `<a href="https://www.imdb.com/title/${esc(m.imdb_id)}/" target="_blank">${esc(m.imdb_id)}</a>` : ''}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>CineLibrary Export — ${movies.length} Movies</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0e0e12; color: #e0e0ec; padding: 32px; }
+  h1 { font-size: 28px; margin-bottom: 4px; color: #e8c84a; }
+  .sub { color: #888; margin-bottom: 24px; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { background: #1a1a24; color: #e8c84a; text-align: left; padding: 10px 12px; border-bottom: 2px solid #2a2a3a; position: sticky; top: 0; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1e1e2a; vertical-align: top; }
+  tr:hover td { background: #16161e; }
+  tr.watched td:first-child::before { content: '✓ '; color: #3ec28f; }
+  small { color: #888; font-size: 11px; }
+  a { color: #6ab5e8; }
+</style></head>
+<body>
+<h1>🎬 CineLibrary Export</h1>
+<p class="sub">${movies.length} movies · Exported ${new Date().toLocaleDateString()}</p>
+<table>
+  <thead><tr><th>Title</th><th>Year</th><th>Rating</th><th>Runtime</th><th>Genres</th><th>Directors</th><th>Drive</th><th>Watched</th><th>IMDb</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</body></html>`
+
+    fs.writeFileSync(result.filePath, html, 'utf8')
+    return { success: true, path: result.filePath, count: movies.length }
   })
 
   // ─── FACETS (for filters) ─────────────────────────────────────────

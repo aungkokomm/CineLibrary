@@ -4,8 +4,8 @@ import Icon from './Icon'
 export default function Sidebar() {
   const {
     page, setPage, drives, stats,
-    driveSerial, setFilter, clearFilters,
-    facets
+    driveSerial, collectionId, setFilter, clearFilters,
+    facets, collections
   } = useStore()
 
   const totalMovies = stats?.totalMovies ?? 0
@@ -16,6 +16,7 @@ export default function Sidebar() {
   function goToDrives() { setPage('drives') }
   function pickDrive(serial: string) { setPage('library'); setFilter({ driveSerial: serial }) }
   function pickGenre(genre: string) { setPage('library'); setFilter({ genre }) }
+  function pickCollection(id: number) { setPage('library'); setFilter({ collectionId: id }) }
 
   return (
     <aside className="sidebar">
@@ -72,6 +73,26 @@ export default function Sidebar() {
                   {d.label}
                 </span>
                 <span className="nav-badge">{d.movie_count}</span>
+              </div>
+            ))}
+          </>
+        )}
+
+        {collections.length > 0 && (
+          <>
+            <div className="nav-section-title">Collections</div>
+            {collections.map(c => (
+              <div
+                key={c.id}
+                className={`nav-item ${collectionId === c.id ? 'active' : ''}`}
+                onClick={() => pickCollection(c.id)}
+                title={c.name}
+              >
+                <Icon name="film" size={14} className="nav-icon" />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                  {c.name}
+                </span>
+                <span className="nav-badge">{c.movie_count}</span>
               </div>
             ))}
           </>

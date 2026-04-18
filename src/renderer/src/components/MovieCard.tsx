@@ -39,6 +39,10 @@ function MovieCard({ movie }: Props) {
           <div className="poster-badge poster-badge-fav">★</div>
         ) : null}
 
+        {movie.is_watched ? (
+          <div className="poster-watched-tick" title="Watched">✓</div>
+        ) : null}
+
         {movie.rating ? (
           <div className="poster-rating">★ {movie.rating.toFixed(1)}</div>
         ) : null}

@@ -913,3 +913,131 @@
   max-width: 300px;
   line-height: 1.6;
 }
+
+/* ─── WATCHED TICK (poster corner) ─── */
+.poster-watched-tick {
+  position: absolute;
+  bottom: 8px; left: 8px;
+  width: 22px; height: 22px;
+  background: var(--success);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+/* ─── WATCHED TOGGLE (library header) ─── */
+.watched-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.watched-toggle-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.watched-toggle-btn.active {
+  background: var(--accent);
+  color: #0a0a0c;
+  font-weight: 600;
+}
+
+/* ─── INFINITE SCROLL ─── */
+.load-more-spinner {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ─── TOASTS ─── */
+.toast-stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 280px;
+  max-width: 420px;
+  pointer-events: all;
+}
+.toast-msg { flex: 1; font-size: 13px; color: var(--text); }
+.toast-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.toast-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .12s;
+}
+.toast-btn:hover { background: rgba(255,255,255,.13); color: var(--text); }
+.toast-btn-primary {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.toast-btn-primary:hover { opacity: .85; }
+
+/* ─── ROW WATCHED BUTTON ─── */
+.row-action-btn.watched { color: var(--success); }
+
+/* ─── EXPORT DROPDOWN ─── */
+.export-dropdown {
+  position: relative;
+}
+.export-dropdown:hover .export-menu,
+.export-dropdown:focus-within .export-menu {
+  display: flex;
+}
+.export-menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  min-width: 170px;
+  z-index: 60;
+  padding: 4px;
+}
+.export-menu button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-2);
+  text-align: left;
+  cursor: pointer;
+  transition: all .12s;
+}
+.export-menu button:hover { background: var(--card); color: var(--text); }

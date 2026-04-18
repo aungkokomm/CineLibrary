@@ -16,6 +16,12 @@ export interface Drive {
   current_letter: string | null
 }
 
+export interface Collection {
+  id: number
+  name: string
+  movie_count: number
+}
+
 export interface MovieListItem {
   id: number
   title: string
@@ -26,6 +32,7 @@ export interface MovieListItem {
   local_poster?: string
   is_missing: number
   is_favorite: number
+  is_watched: number
   volume_serial: string
   drive_label?: string
   genres_csv?: string
@@ -88,12 +95,16 @@ declare global {
         list: (opts: any) => Promise<MovieListItem[]>
         detail: (id: number) => Promise<MovieDetail | null>
         toggleFavorite: (id: number) => Promise<{ is_favorite: number }>
+        toggleWatched:  (id: number) => Promise<{ is_watched: number }>
         play: (id: number) => Promise<any>
         openFolder: (id: number) => Promise<any>
         removeMissing: (driveSerial?: string) => Promise<{ deleted: number }>
       }
+      collections: { list: () => Promise<Collection[]> }
       facets: { all: (filters?: Partial<{ genre: string; director: string; actor: string; year: number; driveSerial: string; showMissing: boolean }>) => Promise<Facets> }
       stats: { overview: () => Promise<Stats> }
+      prefs: { get: () => Promise<Record<string, any>>; set: (key: string, value: any) => Promise<any> }
+      export: { csv: (opts?: any) => Promise<any>; html: (opts?: any) => Promise<any> }
       cache: { getImage: (relPath: string) => Promise<string | null> }
     }
     app: {

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore, SortKey } from '../store'
 import Icon from './Icon'
 
@@ -9,7 +10,14 @@ export default function Topbar() {
     driveSerial, drives, genre
   } = useStore()
 
+  const [exporting, setExporting] = useState(false)
   const selectedDrive = drives.find(d => d.volume_serial === driveSerial)
+
+  async function doExport(fmt: 'csv' | 'html') {
+    setExporting(true)
+    await window.api.export[fmt]()
+    setExporting(false)
+  }
 
   let title = 'All Movies'
   if (page === 'favorites') title = 'Favorites'
@@ -57,6 +65,16 @@ export default function Topbar() {
                 </optgroup>
               ))}
             </select>
+
+            <div className="export-dropdown">
+              <button className="btn btn-outline btn-sm export-btn" disabled={exporting}>
+                {exporting ? '…' : '↓ Export'}
+              </button>
+              <div className="export-menu">
+                <button onClick={() => doExport('csv')}>Export as CSV</button>
+                <button onClick={() => doExport('html')}>Export as HTML</button>
+              </div>
+            </div>
 
             <div className="view-toggle">
               <button

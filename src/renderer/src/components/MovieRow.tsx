@@ -15,6 +15,11 @@ function MovieRow({ movie }: Props) {
     await window.api.movies.toggleFavorite(movie.id)
     useStore.getState().loadMovies()
   }
+  async function toggleWatched(e: React.MouseEvent) {
+    e.stopPropagation()
+    await window.api.movies.toggleWatched(movie.id)
+    useStore.getState().loadMovies()
+  }
 
   return (
     <div className="movie-row" onClick={() => setOpenMovieId(movie.id)}>
@@ -56,6 +61,13 @@ function MovieRow({ movie }: Props) {
         )}
       </div>
       <div className="movie-row-actions" onClick={e => e.stopPropagation()}>
+        <button
+          className={`row-action-btn ${movie.is_watched ? 'watched' : ''}`}
+          title={movie.is_watched ? 'Mark unwatched' : 'Mark watched'}
+          onClick={toggleWatched}
+        >
+          {movie.is_watched ? '✓' : '○'}
+        </button>
         <button className="row-action-btn" title="Favorite" onClick={toggleFav}>
           {movie.is_favorite ? '★' : '☆'}
         </button>
