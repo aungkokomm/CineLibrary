@@ -1,0 +1,75 @@
+{
+  "name": "cinelibrary",
+  "version": "1.0.0",
+  "description": "Portable central movie library built on top of MediaElch",
+  "main": "dist-electron/main/index.js",
+  "author": "CineLibrary",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && electron-builder",
+    "build:dir": "vite build && electron-builder --dir",
+    "start": "electron .",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.11",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "fast-xml-parser": "^4.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "build": {
+    "appId": "com.cinelibrary.app",
+    "productName": "CineLibrary",
+    "copyright": "CineLibrary — Your Portable Movie Catalog",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "signingHashAlgorithms": [],
+      "sign": null,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "CineLibrary-${version}-portable.exe"
+    },
+    "portable": {
+      "artifactName": "CineLibrary-${version}-portable.exe"
+    },
+    "extraFiles": [
+      {
+        "from": "build/icon.ico",
+        "to": "resources/app.asar.unpacked/build/icon.ico"
+      }
+    ]
+  }
+}
