@@ -8,7 +8,7 @@
 
 ## Download
 
-👉 **[Latest Release — CineLibrary-1.0.0-portable.exe](https://github.com/aungkokomm/CineLibrary/releases/latest)**
+👉 **[Latest Release — CineLibrary-1.0.0-portable.exe](https://github.com/aungkokomm/CineLibrary/releases)**
 
 No install needed. Just double-click and run.
 
