@@ -1,4 +1,6 @@
 # CineLibrary
+> **Note: This version is no longer maintained if you are interested in this same app with WinUI 3 + C# version
+check here** (https://github.com/aungkokomm/CineLibraryCS)
 
 **A portable Windows app to browse and manage your MediaElch-scraped movie collection across multiple external drives.**
 
