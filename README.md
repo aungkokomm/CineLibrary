@@ -1,6 +1,12 @@
-# CineLibrary
-> **Note: This version is no longer maintained if you are interested in this same app with WinUI 3 + C# version
-check here** (https://github.com/aungkokomm/CineLibraryCS)
+# CineLibrary (no longer developed)
+
+> ## ⛔ This project has moved
+>
+> **CineLibrary is no longer developed.** The whole concept, plus new features, now lives in a rewritten **WinUI 3 + C#** version:
+>
+> ### 👉 [CineLibraryCS](https://github.com/aungkokomm/CineLibraryCS)
+>
+> This Electron version stays here for reference only and will not receive further updates. Please head over to CineLibraryCS for the maintained app.
 
 **A portable Windows app to browse and manage your MediaElch-scraped movie collection across multiple external drives.**
 
